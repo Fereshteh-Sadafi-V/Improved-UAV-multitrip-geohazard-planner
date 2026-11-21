@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Improved UAV Multi-trip Geohazard Planner</title>
+
+  <link rel="stylesheet" href="https://pyscript.net/releases/2025.8.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2025.8.1/core.js"></script>
+
+  <style>
+    /* ------------------------------------------------------------------ */
+    /* Base                                                                */
+    /* ------------------------------------------------------------------ */
+    :root {
+      --accent: #1f6feb;
+      --accent-hover: #155bc0;
+      --accent-soft: #e8f0fd;
+      --ink: #1f2328;
+      --ink-soft: #57606a;
+      --line: #d8dee4;
+      --surface: #ffffff;
+      --surface-soft: #f6f8fa;
+      --ok: #1f883d;
+      --danger: #cf222e;
+      --muted: #8b949e;
+      --radius: 8px;
+      --shadow: 0 1px 2px rgba(15, 25, 35, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--surface-soft);
+      color: var(--ink);
+      font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+                   Arial, "Noto Sans", sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    h1 { font-size: 1.35rem; margin: 0 0 2px 0; letter-spacing: -0.01em; }
+    h2 {
+      font-size: 0.95rem;
+      margin: 0;
+      padding-left: 10px;
+      border-left: 3px solid var(--accent);
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .subtitle {
+      color: var(--ink-soft);
+      margin: 2px 0 0 0;
+      font-size: 0.85rem;
+      max-width: 70ch;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Page shell                                                          */
+    /* ------------------------------------------------------------------ */
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 14px 16px;
+    }
+
+    .masthead { margin-bottom: 12px; }
+
+    /* ------------------------------------------------------------------ */
+    /* Dashboard grid: fixed to viewport on wide screens                   */
+    /* ------------------------------------------------------------------ */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 14px;
+      height: calc(100vh - 100px);
+      min-height: 480px;
+    }
+
+    .dash-left,
+    .dash-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .dash-left { overflow-y: auto; }
+
+    @media (max-width: 900px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .dash-left, .dash-right { overflow: visible; }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Cards                                                               */
+    /* ------------------------------------------------------------------ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+    }
+    .card.tight { padding: 10px 12px; }
+    .card > h2 + * { margin-top: 8px; }
+    .card > * + h2 { margin-top: 12px; }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 0.8rem; }
+    .mono  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    /* How-to list */
+    .howto { margin: 6px 0 0 0; padding-left: 18px; }
+    .howto li { margin-bottom: 4px; }
+    .howto b { color: var(--ink); }
+
+    /* ------------------------------------------------------------------ */
+    /* Rows / stacks                                                       */
+    /* ------------------------------------------------------------------ */
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .stack { display: flex; flex-direction: column; gap: 8px; }
+    label { color: var(--ink-soft); font-size: 0.85rem; }
+
+    /* ------------------------------------------------------------------ */
+    /* Buttons / selects                                                   */
+    /* ------------------------------------------------------------------ */
+    button, select {
+      font: inherit;
+      font-size: 0.88rem;
+      padding: 6px 11px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      transition: background-color 120ms ease, border-color 120ms ease;
+    }
+    button { cursor: pointer; }
+    button:hover { background: #f3f4f6; }
+    button:active { background: #eaecef; }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      background: var(--surface);
+    }
+    button:disabled:hover { background: var(--surface); }
+    select:hover { background: #f3f4f6; }
+
+    #run-btn {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+      font-weight: 600;
+    }
+    #run-btn:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+    #run-btn:active:not(:disabled) { background: #114aa3; border-color: #114aa3; }
+    #run-btn:disabled { background: var(--accent); border-color: var(--accent); opacity: 0.6; color: #ffffff; }
+
+    .toggle-btn {
+      background: var(--surface);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+      position: relative;
+      padding-left: 24px;
+    }
+    .toggle-btn::before {
+      content: "";
+      position: absolute;
+      left: 9px;
+      top: 50%;
+      width: 8px; height: 8px;
+      margin-top: -4px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background-color 120ms ease;
+    }
+    .toggle-btn.on { background: var(--accent); color: #ffffff; }
+    .toggle-btn.on::before { background: #b6ffcb; }
+    .toggle-btn.on:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .toggle-btn:disabled {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+    .toggle-btn:disabled::before { background: #b6ffcb; }
+
+    .btn-ghost {
+      background: var(--surface);
+      border-color: var(--line);
+      color: var(--ink);
+      font-weight: 500;
+    }
+    .btn-ghost:hover:not(:disabled) { background: var(--surface-soft); border-color: #c9d1d9; }
+
+    /* ------------------------------------------------------------------ */
+    /* Status pill                                                         */
+    /* ------------------------------------------------------------------ */
+    #status {
+      display: inline-block;
+      padding: 7px 10px;
+      border-left: 3px solid var(--accent);
+      background: var(--accent-soft);
+      color: var(--ink);
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+    #data-info { color: var(--ink-soft); font-size: 0.85rem; }
+
+    /* ------------------------------------------------------------------ */
+    /* Tables                                                              */
+    /* ------------------------------------------------------------------ */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.82rem;
+      background: var(--surface);
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 5px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--surface-soft);
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    tbody tr:nth-child(even) td { background: #fafbfc; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .swatch {
+      display: inline-block;
+      width: 11px; height: 11px;
+      border-radius: 3px;
+      margin-right: 6px;
+      vertical-align: -2px;
+    }
+
+    .scroll { overflow-x: auto; border-radius: 6px; }
+
+    /* ------------------------------------------------------------------ */
+    /* Tabs (pure CSS)                                                     */
+    /* ------------------------------------------------------------------ */
+    .tabs { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+
+    .tabs > input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+
+    .tab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 4px 4px 0 4px;
+      border-bottom: 1px solid var(--line);
+    }
+    .tab-bar label {
+      cursor: pointer;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      background: var(--surface-soft);
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: -1px;
+      transition: background-color 120ms ease, color 120ms ease;
+    }
+    .tab-bar label:hover { background: #eef1f4; color: var(--ink); }
+
+    .tab-panels {
+      flex: 1;
+      min-height: 0;
+      padding-top: 10px;
+      overflow-y: auto;
+    }
+    .tab-panel { display: none; }
+    .tab-panel > * + * { margin-top: 12px; }
+
+    #tab-compare:checked ~ .tab-panels #panel-compare,
+    #tab-trips:checked   ~ .tab-panels #panel-trips,
+    #tab-map:checked     ~ .tab-panels #panel-map,
+    #tab-conv:checked    ~ .tab-panels #panel-conv,
+    #tab-dl:checked      ~ .tab-panels #panel-dl { display: block; }
+
+    #tab-compare:checked ~ .tab-bar label[for="tab-compare"],
+    #tab-trips:checked   ~ .tab-bar label[for="tab-trips"],
+    #tab-map:checked     ~ .tab-bar label[for="tab-map"],
+    #tab-conv:checked    ~ .tab-bar label[for="tab-conv"],
+    #tab-dl:checked      ~ .tab-bar label[for="tab-dl"] {
+      background: var(--surface);
+      color: var(--accent);
+      border-bottom: 1px solid var(--surface);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Algorithm selector row                                              */
+    /* ------------------------------------------------------------------ */
+    #algorithm-selector-row {
+      display: none;
+      gap: 8px;
+      align-items: center;
+      margin: 4px 0;
+      padding: 8px 10px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    #algorithm-selector-row label { color: var(--ink); font-weight: 600; }
+
+    /* ------------------------------------------------------------------ */
+    /* Charts                                                              */
+    /* ------------------------------------------------------------------ */
+    #route-chart, #history-chart, #comparison-convergence { overflow-x: auto; }
+
+    /* ------------------------------------------------------------------ */
+    /* Footer                                                              */
+    /* ------------------------------------------------------------------ */
+    footer {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+      border-top: 1px solid var(--line);
+      padding-top: 8px;
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 10px 10px 18px; }
+      .card { padding: 10px 12px; }
+      h1 { font-size: 1.15rem; }
+      button, select { font-size: 0.82rem; padding: 6px 9px; }
+      #run-btn { width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <header class="masthead">
+      <h1>Improved UAV Multi-trip Geohazard Planner</h1>
+      <p class="subtitle">
+        Plans multi-trip UAV monitoring routes for geohazard sites and compares
+        four algorithms (TS4GM, LNS, GRASP, GA) on the same data, mirroring the
+        comparative study in Wang and Wen (2026), Section 5.2.
+        Everything runs inside your browser.
+      </p>
+    </header>
+
+    <div class="dashboard">
+
+      <!-- ============================================================ -->
+      <!-- LEFT COLUMN: how-to + controls (visible on every tab)       -->
+      <!-- ============================================================ -->
+      <aside class="dash-left">
+
+        <section class="card">
+          <h2>How to use this page</h2>
+          <ol class="howto small">
+            <li><b>Pick algorithms.</b> TS4GM is always included as the reference; click LNS, GRASP or GA to add them to the comparison.</li>
+            <li><b>Choose a setting.</b> Quick is the only browser preset — Standard and Paper-style are far too slow for a tab and are available from the command line.</li>
+            <li><b>Press Run.</b> Results appear in the tabs on the right: Compare, Trips, Route map, Convergence, Downloads.</li>
+          </ol>
+          <p class="small muted" style="margin:8px 0 0 0">
+            New here? Read the full documentation: <a href="README.html" target="_blank" rel="noopener">README</a>.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>Data</h2>
+          <div id="data-info">Loading Python in your browser... the first load can take a little while.</div>
+          <div class="row" style="margin-top:8px">
+            <button id="dl-instance" class="btn-ghost" disabled>Download example data (CSV)</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>1. Run the planner</h2>
+
+          <div class="stack">
+            <div>
+              <label style="display:block;margin-bottom:4px"><b>Algorithms</b></label>
+              <div class="row">
+                <button id="toggle-ts4gm" class="toggle-btn on" disabled
+                        title="TS4GM is the paper's reference algorithm and stays on.">
+                  TS4GM (ref)
+                </button>
+                <button id="toggle-lns"   class="toggle-btn on" aria-pressed="true">LNS</button>
+                <button id="toggle-grasp" class="toggle-btn"    aria-pressed="false">GRASP</button>
+                <button id="toggle-ga"    class="toggle-btn"    aria-pressed="false">GA</button>
+              </div>
+            </div>
+
+            <div>
+              <label for="preset-select" style="display:block;margin-bottom:4px"><b>Search setting</b></label>
+              <div class="row">
+                <select id="preset-select">
+                  <option value="quick">Quick (browser mode)</option>
+                </select>
+                <button id="run-btn" disabled>Run planner</button>
+              </div>
+            </div>
+
+            <div id="status">Loading...</div>
+          </div>
+        </section>
+
+      </aside>
+
+      <!-- ============================================================ -->
+      <!-- RIGHT COLUMN: tabbed results                                 -->
+      <!-- ============================================================ -->
+      <main class="dash-right">
+        <div class="card tight" style="flex:1; display:flex; min-height:0;">
+          <div class="tabs" style="flex:1; min-height:0;">
+
+            <input type="radio" name="tabs" id="tab-compare" checked>
+            <input type="radio" name="tabs" id="tab-trips">
+            <input type="radio" name="tabs" id="tab-map">
+            <input type="radio" name="tabs" id="tab-conv">
+            <input type="radio" name="tabs" id="tab-dl">
+
+            <div class="tab-bar">
+              <label for="tab-compare">Compare</label>
+              <label for="tab-trips">Trips</label>
+              <label for="tab-map">Route map</label>
+              <label for="tab-conv">Convergence</label>
+              <label for="tab-dl">Downloads</label>
+            </div>
+
+            <div class="tab-panels">
+
+              <div class="tab-panel" id="panel-compare">
+                <h2>2. Comparison results</h2>
+                <div id="comparison-summary"></div>
+                <div id="comparison-convergence"></div>
+
+                <div id="algorithm-selector-row">
+                  <label for="algorithm-select"><b>Show details for</b></label>
+                  <select id="algorithm-select"></select>
+                </div>
+
+                <h2>Selected algorithm summary</h2>
+                <div id="summary"></div>
+              </div>
+
+              <div class="tab-panel" id="panel-trips">
+                <h2>Trips of the selected algorithm</h2>
+                <div class="scroll" id="trip-table"></div>
+              </div>
+
+              <div class="tab-panel" id="panel-map">
+                <h2>Route map</h2>
+                <div id="route-chart"></div>
+              </div>
+
+              <div class="tab-panel" id="panel-conv">
+                <h2>Convergence of the selected algorithm</h2>
+                <div id="history-chart"></div>
+              </div>
+
+              <div class="tab-panel" id="panel-dl">
+                <h2>5. Download results</h2>
+                <div class="row">
+                  <button id="dl-trips"      class="btn-ghost" disabled>Trip summary (CSV)</button>
+                  <button id="dl-routes"     class="btn-ghost" disabled>Routes (CSV)</button>
+                  <button id="dl-history"    class="btn-ghost" disabled>Convergence (CSV)</button>
+                  <button id="dl-comparison" class="btn-ghost" disabled>Comparison summary (CSV)</button>
+                </div>
+                <p class="small muted" style="margin:8px 0 0 0">
+                  The first three buttons download the currently selected algorithm's data.
+                  The last button appears only after a comparison run and lists one row per
+                  algorithm.
+                </p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </main>
+
+    </div>
+
+    <footer>
+      The example data is synthetic, so its results are not directly comparable
+      with the real Shaanxi case in the original paper.
+    </footer>
+  </div>
+
+  <script type="py" src="./main.py" config='{
+    "files": {
+      "./uavplanner/__init__.py": "./uavplanner/__init__.py",
+      "./uavplanner/algo_common.py": "./uavplanner/algo_common.py",
+      "./uavplanner/api.py": "./uavplanner/api.py",
+      "./uavplanner/data.py": "./uavplanner/data.py",
+      "./uavplanner/ga.py": "./uavplanner/ga.py",
+      "./uavplanner/grasp.py": "./uavplanner/grasp.py",
+      "./uavplanner/initial.py": "./uavplanner/initial.py",
+      "./uavplanner/initial_paper.py": "./uavplanner/initial_paper.py",
+      "./uavplanner/lns.py": "./uavplanner/lns.py",
+      "./uavplanner/local_search.py": "./uavplanner/local_search.py",
+      "./uavplanner/model.py": "./uavplanner/model.py",
+      "./uavplanner/ordering.py": "./uavplanner/ordering.py",
+      "./uavplanner/svgplots.py": "./uavplanner/svgplots.py",
+      "./uavplanner/ts4gm.py": "./uavplanner/ts4gm.py"
+    }
+  }'></script>
+</body>
+</html>

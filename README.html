@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>README — Improved UAV Multi-trip Geohazard Planner</title>
+
+  <style>
+    :root {
+      --accent: #1f6feb;
+      --accent-soft: #e8f0fd;
+      --ink: #1f2328;
+      --ink-soft: #57606a;
+      --line: #d8dee4;
+      --surface: #ffffff;
+      --surface-soft: #f6f8fa;
+      --muted: #8b949e;
+      --radius: 8px;
+      --shadow: 0 1px 2px rgba(15, 25, 35, 0.06);
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--surface-soft);
+      color: var(--ink);
+      font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+                   Arial, "Noto Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
+    .back {
+      display: inline-block;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+    }
+    .back a { color: var(--accent); text-decoration: none; }
+    .back a:hover { text-decoration: underline; }
+
+    h1 {
+      font-size: 1.7rem;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.01em;
+    }
+    h2 {
+      font-size: 1.15rem;
+      margin: 28px 0 10px 0;
+      padding: 0 0 6px 10px;
+      border-left: 3px solid var(--accent);
+      border-bottom: 1px solid var(--line);
+      font-weight: 700;
+    }
+    h3 {
+      font-size: 1rem;
+      margin: 20px 0 8px 0;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    p { margin: 0 0 10px 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    blockquote {
+      margin: 12px 0;
+      padding: 10px 14px;
+      border-left: 3px solid var(--accent);
+      background: var(--accent-soft);
+      border-radius: 6px;
+      color: var(--ink);
+      font-size: 0.95rem;
+    }
+    blockquote p:last-child { margin-bottom: 0; }
+
+    code, pre, .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    code {
+      background: var(--surface-soft);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.88em;
+    }
+    pre {
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 12px;
+      overflow-x: auto;
+      font-size: 0.88rem;
+    }
+    pre code { background: transparent; padding: 0; }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+      margin: 8px 0 14px 0;
+      background: var(--surface);
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--surface-soft);
+      font-weight: 600;
+    }
+    tbody tr:nth-child(even) td { background: #fafbfc; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    ul, ol { margin: 0 0 10px 0; padding-left: 22px; }
+    li { margin-bottom: 4px; }
+
+    hr {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 24px 0;
+    }
+
+    footer {
+      margin-top: 32px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <p class="back"><a href="index.html">← Back to the app</a></p>
+
+    <h1>Improved UAV Multi-trip Geohazard Planner</h1>
+
+    <p>
+      A free tool that plans <strong>multi-trip routes for a drone (UAV)</strong> that must inspect
+      many geohazard sites, such as landslides, collapses and debris flows. It runs
+      <strong>in your web browser</strong>. There is nothing to install and no account to create.
+    </p>
+
+    <p>The planning method is the <strong>TS4GM tabu search</strong> from:</p>
+
+    <blockquote>
+      <p>
+        Wang, W., &amp; Wen, C. (2026). Multi-trip path planning for UAV with autonomous
+        docking station in geohazards monitoring. <em>Computers &amp; Industrial Engineering,
+        211</em>, 111578. <a href="https://doi.org/10.1016/j.cie.2025.111578" target="_blank" rel="noopener">https://doi.org/10.1016/j.cie.2025.111578</a>
+      </p>
+    </blockquote>
+
+    <p>
+      The tool also implements three comparison algorithms — <strong>LNS</strong>, <strong>GRASP</strong> and
+      <strong>GA</strong> — so the user can reproduce, on their own data, the comparative study in
+      Section 5.2 of that paper, with the same starting solution and the same
+      neighbourhood operators.
+    </p>
+
+    <p>
+      This project is an <strong>independent re-implementation</strong> based on the paper. It is
+      not the original authors' code, and it is not affiliated with or endorsed by them.
+    </p>
+
+    <h2>What problem does this tool solve?</h2>
+
+    <p>
+      Geohazards such as landslides and debris flows are often triggered by heavy rain
+      or earthquakes. Drones are a low-cost way to monitor them, but a drone can only
+      fly for a limited time on one battery (the paper's drone flies about 100 to 140
+      minutes). If there are many sites, one flight is not enough.
+    </p>
+
+    <p>
+      So the drone is based at an <strong>autonomous docking station (ADS)</strong>. After each
+      flight it returns to the station to recharge and upload its data, then flies
+      the next <strong>trip</strong>.
+    </p>
+
+    <p>The tool decides:</p>
+    <ol>
+      <li><strong>Which sites</strong> are inspected on each trip.</li>
+      <li><strong>In what order</strong> they are visited.</li>
+    </ol>
+
+    <p>The rules are:</p>
+    <ul>
+      <li>Every site is inspected <strong>exactly once</strong>.</li>
+      <li>Each trip must start and end at the docking station and must <strong>not exceed the
+        maximum flight time</strong> (called <code>Tmax</code>).</li>
+      <li>The goal is to <strong>collect as much profit as possible</strong> while using <strong>as few
+        trips as possible</strong>.</li>
+    </ul>
+
+    <h2>What is "profit"?</h2>
+
+    <p>
+      Each site gets a <strong>profit from 1 to 4</strong> that shows how urgent it is to inspect.
+      The paper derives it from two expert ratings: how <strong>stable</strong> the site is
+      (Good, Weak, Poor, Very Poor) and how <strong>dangerous</strong> it is (Minor, Moderate,
+      High, Very High). Profit 4 means the most urgent.
+    </p>
+
+    <p>
+      Earlier monitoring is more useful for warnings and emergency response, so profit
+      <strong>decreases with each trip</strong>. A site's profit on trip <em>r</em> is:
+    </p>
+
+    <pre><code>profit on trip r  =  original profit  ×  ρ^(r-1)        (ρ is between 0 and 1)</code></pre>
+
+    <p>The paper uses <strong>ρ = 0.9</strong>. This pushes urgent sites into early trips.</p>
+
+    <p><strong>Worked example (from the paper's real case, ρ = 0.9).</strong> The four trips collect
+    original profits of 81, 81, 32 and 6:</p>
+
+    <table>
+      <thead>
+        <tr><th>Trip</th><th class="num">Original profit</th><th class="num">Multiplier</th><th class="num">Counted profit</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td class="num">81</td><td class="num">1.000</td><td class="num">81.000</td></tr>
+        <tr><td>2</td><td class="num">81</td><td class="num">0.900</td><td class="num">72.900</td></tr>
+        <tr><td>3</td><td class="num">32</td><td class="num">0.810</td><td class="num">25.920</td></tr>
+        <tr><td>4</td><td class="num">6</td><td class="num">0.729</td><td class="num">4.374</td></tr>
+        <tr><td><strong>Total</strong></td><td class="num"></td><td class="num"></td><td class="num"><strong>184.194</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h2>How to use the tool (3 steps)</h2>
+    <ol>
+      <li>
+        <strong>Open the web page</strong> (<a href="index.html">index.html</a>). Wait until the status line says
+        <em>"Ready. Choose algorithms, a preset, and press Run."</em> The first load can
+        take a minute because Python is starting inside your browser.
+      </li>
+      <li>
+        <strong>Choose which algorithms to compare</strong>:
+        <ul>
+          <li><strong>TS4GM</strong> is the reference algorithm from the paper and is always included
+            (you cannot turn it off).</li>
+          <li><strong>LNS</strong>, <strong>GRASP</strong>, <strong>GA</strong> are toggle buttons. Click one to turn it on or
+            off. The default is <strong>LNS on</strong> (so the page starts with a 2-algorithm
+            comparison), and <strong>GRASP</strong> and <strong>GA off</strong>.</li>
+          <li>The Run button label updates to show how many algorithms are selected.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Press Run</strong> and read the results. The page stays responsive while the
+        algorithms run; the status line shows elapsed seconds and which algorithm is
+        executing.
+      </li>
+    </ol>
+
+    <blockquote>
+      <p>
+        Only the <strong>Quick</strong> preset is available from the web page. Standard and
+        Paper-style presets are far too slow for a browser tab, so they are only
+        available from the command line (see "Running it on your own computer"
+        below). The page will tell you this.
+      </p>
+    </blockquote>
+
+    <h2>What you will see</h2>
+    <ul>
+      <li><strong>Comparison summary table</strong>: one row per algorithm, plus the paper-style
+        initial solution as a baseline. The best objective is in bold.</li>
+      <li><strong>Convergence chart</strong> (equivalent to Fig. 5 of the paper): one line per
+        algorithm, with the initial-solution value as a dashed grey baseline.</li>
+      <li><strong>Show details for</strong> dropdown: switch between the algorithms' individual
+        results without re-running.</li>
+      <li><strong>Results summary and trip table</strong> for the selected algorithm.</li>
+      <li><strong>Route map</strong> for the selected algorithm.</li>
+      <li><strong>Convergence chart</strong> for the selected algorithm.</li>
+      <li><strong>Download buttons (CSV files)</strong>:
+        <ul>
+          <li><em>Trip summary</em>, <em>Routes</em>, <em>Convergence</em>: for the selected algorithm.</li>
+          <li><em>Comparison summary</em>: one row per algorithm (only appears after a
+            comparison run).</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h2>The four algorithms in this project</h2>
+
+    <p>
+      All four use the <strong>same starting solution</strong>, the same <strong>instance</strong>, the same
+      <strong>seed</strong> and the same <strong>preset</strong> — this is the fairness requirement from the
+      paper's Section 5.2.
+    </p>
+
+    <ul>
+      <li><strong>TS4GM</strong> (the paper's method). Tabu search with the paper's inter-trip moves
+        (1→0, 0←n, 1↔1) and intra-trip moves (2-opt, Or-opt), tabu list per trip with
+        the paper's dynamic τ rule and aspiration criterion. Maximum 200 iterations,
+        early stop after <code>z_in = 50</code> non-improving iterations. Best of 5 trials.</li>
+      <li><strong>LNS</strong>. Same neighbourhood operators as TS4GM, random / worst / last-trip
+        destroy, greedy repair, simulated-annealing acceptance. Maximum 200
+        iterations, early stop after <code>z_in = 50</code> non-improving iterations. Best of 5
+        trials.</li>
+      <li><strong>GRASP</strong>. Paper parameters: greediness rate <strong>0.25</strong>, local search of <strong>5</strong>
+        iterations per GRASP iteration, maximum <strong>200</strong> iterations per trial, <strong>5</strong>
+        trials per case. No early stop (GRASP does not converge within 200 iterations
+        on the paper's case — that is one of the paper's findings).</li>
+      <li><strong>GA</strong>. Paper parameters: tournament selection with <strong>k = 3</strong>, population
+        size <strong>300</strong>, crossover probability <strong>0.8</strong>, mutation probability <strong>0.25</strong>,
+        maximum <strong>200</strong> generations. Early stop after <code>z_in = 50</code> non-improving
+        generations. Best of 5 runs.</li>
+    </ul>
+
+    <p>
+      The paper's result is that <strong>TS4GM</strong> finds the best solutions and converges
+      fastest; the LNS algorithm converges to the paper's trip count within 200
+      iterations; the GA converges in some cases; the GRASP algorithm does not
+      converge within 200 iterations on the paper's case.
+      <strong>These conclusions only appear when the algorithms run to the paper's iteration limits</strong>
+      (see the Paper-style preset on the command line). The browser's Quick preset is
+      heavily truncated and may produce different rankings.
+    </p>
+
+    <h2>About the example data</h2>
+
+    <p>
+      The tool currently uses <strong>synthetic (artificial) example data</strong>: 88 sites, the
+      same number as the paper's case, but with invented locations and profits.
+    </p>
+
+    <p>
+      The paper's real data (southern Shaanxi Province, China, 2,000 km²) is available
+      from its authors on request. Because our data is different,
+      <strong>the numbers produced by this tool cannot be compared directly with the paper's results</strong>
+      (for example, the paper's 184.194). A default service time of <strong>120 seconds per
+      site</strong> is used here, while the paper sets service time per site from its type
+      and area.
+    </p>
+
+    <p>
+      Because the search involves randomness, two runs may give slightly different
+      results. This is normal for this kind of method. The paper runs each case five
+      times and keeps the best result.
+    </p>
+
+    <h2>How does TS4GM work? (plain language)</h2>
+
+    <p>TS4GM is a <strong>tabu search</strong>. It starts with a reasonable plan and keeps improving
+    it step by step.</p>
+
+    <ol>
+      <li><strong>Starting plan.</strong> Sites are added to trips one by one, always choosing the
+        most profitable of the two nearest unvisited sites ("2-Nearest Greedy
+        Insertion").</li>
+      <li><strong>Improvement moves.</strong> The search tries small changes:
+        <ul>
+          <li><em>Inside one trip:</em> reorder the route to make it shorter (<strong>2-opt</strong>,
+            <strong>Or-opt</strong>), which can free time for more sites.</li>
+          <li><em>Between trips:</em> move or swap sites so urgent sites fly earlier
+            (<strong>1-0 swap</strong>, <strong>0-n swap</strong>, <strong>1-1 swap</strong>).</li>
+        </ul>
+      </li>
+      <li><strong>Tabu list (memory).</strong> A site that was just removed from a trip is temporarily
+        not allowed back into it. This stops the search from going in circles. The
+        ban is lifted if the move gives a new best result.</li>
+      <li><strong>Stopping.</strong> The search stops after a set number of iterations, or when it
+        has not improved for a set number of iterations.</li>
+    </ol>
+
+    <p>
+      Finding the perfect plan is extremely hard for many sites (the problem is
+      NP-hard), so TS4GM looks for a very good plan in reasonable time.
+    </p>
+
+    <h2>Simplifications we made (not in the paper)</h2>
+
+    <p>
+      The paper describes the model and the four algorithms, but it does not spell
+      out every implementation detail. Wherever we had to make a choice, it is listed
+      below. <strong>None of these change the mathematical model or the published
+      parameter values.</strong> They are implementation convenience choices, chosen so the
+      tool fits in a browser and finishes in reasonable time.
+    </p>
+
+    <h3>In the browser page</h3>
+    <ul>
+      <li>Only the <strong>Quick</strong> preset is available in the browser. Standard and
+        Paper-style are far too slow for a browser tab (a Paper-style TS4GM run is
+        several minutes even on a fast desktop, and a four-algorithm comparison is
+        much longer). Both presets remain available from the command line.</li>
+      <li><strong>Default toggles</strong> are TS4GM (reference) + LNS on, GRASP and GA off. This is
+        a lighter default that works on smaller laptops. The user can turn any
+        combination on.</li>
+      <li>The web page's <strong>Quick</strong> preset uses reduced iteration counts for GRASP
+        compared to the other algorithms (GRASP's per-iteration cost is much higher).
+        The paper's parameters are fully restored in <strong>Standard</strong> and <strong>Paper-style</strong>.</li>
+    </ul>
+
+    <h3>Presets and iteration counts</h3>
+    <ul>
+      <li>The paper fixes only two things for the comparison:
+        <code>max_iters = 200</code> and <code>n_runs = 5</code>. Everything else (per-algorithm iteration
+        counts in Quick and Standard, GA <code>z_in</code>, etc.) is our choice. The exact
+        numbers are visible in <code>uavplanner/api.py</code> under <code>PRESETS</code>.</li>
+      <li><strong>GA early stop.</strong> The paper specifies <code>z_in</code> only for TS4GM. We apply the
+        same early-stop rule to the GA (<code>ga_z_in</code>) so all four algorithms can be
+        compared fairly. GRASP has <strong>no</strong> early stop — that is why the paper reports
+        GRASP failing to reach the paper's trip count within 200 iterations.</li>
+    </ul>
+
+    <h3>Starting solutions</h3>
+    <ul>
+      <li>The paper says the LNS and GRASP use "the same initial solutions" as TS4GM;
+        we apply that to the GA too.</li>
+      <li>The GA's <strong>initial population</strong> is one paper-style start plus <code>pop_size − 1</code>
+        randomised variants (random inter-trip moves applied to the paper start, then
+        <code>improve_trip</code> on every trip). The paper does not specify a GA initialisation
+        strategy.</li>
+      <li>The GA <strong>crossover</strong> keeps a contiguous block of whole trips from one parent
+        and fills the remaining sites from the other parent, then repairs with
+        <code>lns._repair</code>. A flat-permutation order-crossover was rejected because the
+        paper's objective is not trip-symmetric (later trips are discounted by
+        <code>ρ^(r-1)</code>); whole-trip blocks preserve early high-profit trips across
+        generations, which matches the paper's aim. The paper does not specify
+        crossover structure.</li>
+      <li>The GA <strong>mutation</strong> is applied per child (probability <code>0.25</code>) and chooses
+        one of: a random feasible inter-trip move, <code>improve_trip</code> on one random trip,
+        or a feasible 1-1 swap between two trips. The paper gives only the
+        probability value.</li>
+      <li>The GA <strong>repair</strong> on a failed child: the child is discarded and the fitter
+        parent is cloned. The paper does not specify a repair strategy.</li>
+    </ul>
+
+    <h3>GRASP</h3>
+    <ul>
+      <li>Candidate list size = <code>ceil(greediness * |improving candidates|)</code>, minimum 1.
+        The paper gives the rate (<code>0.25</code>) only, not the rounding rule.</li>
+      <li>GRASP has <strong>no</strong> early-stop counter, matching the paper's reported behaviour
+        that GRASP does not converge within 200 iterations on the paper's case.</li>
+    </ul>
+
+    <h3>LNS</h3>
+    <ul>
+      <li>The paper says the LNS is "adapted to use the same inter-trip and intra-trip
+        operations ... and the same initial solutions with 8 trips". We implement
+        that with three destroy operators (random, worst, last-trip), greedy repair,
+        simulated-annealing acceptance, and a short best-improvement descent on the
+        inter-trip moves after each repair. The paper does not specify the destroy
+        and repair operators.</li>
+    </ul>
+
+    <h3>Drivers and CLI</h3>
+    <ul>
+      <li>The <code>try_grasp.py</code> and <code>try_ga.py</code> drivers default to a <strong>fast</strong> mode
+        (<code>try_grasp</code>: 1 run × 8 iterations × 2 LS iterations, with a 120 s wall-time
+        budget; <code>try_ga</code>: 1 run × 15 generations × pop 30). The paper protocol is
+        restored with <code>--paper</code>. The library modules (<code>grasp.py</code>, <code>ga.py</code>) keep the
+        paper defaults, so anyone who calls <code>run_grasp_trials()</code> / <code>run_ga_trials()</code>
+        directly gets the paper values.</li>
+      <li><code>check_phase4.py</code> (headless equivalent of the browser comparison view)
+        defaults to the <strong>Quick</strong> preset; use <code>--paper</code> for the paper's parameters.</li>
+    </ul>
+
+    <h3>Other</h3>
+    <ul>
+      <li><code>index.html</code> loads all Python modules into PyScript's filesystem. The page's
+        heavy work runs in a background thread (<code>asyncio.to_thread</code>) so the browser
+        tab stays responsive. That is an implementation detail and does not affect
+        results.</li>
+    </ul>
+
+    <h2>What is planned next</h2>
+    <ul>
+      <li><strong>Upload your own CSV file</strong> with your own sites. <em>(Not available yet.)</em></li>
+    </ul>
+
+    <h2>Running it on your own computer (optional)</h2>
+
+    <p>You only need this if you want to work on the code. You need Python 3 installed.</p>
+
+    <ol>
+      <li>Download or clone this repository.</li>
+      <li>Open a terminal in the project folder.</li>
+      <li>Start a small local web server:
+        <pre><code>python -m http.server 8000</code></pre>
+      </li>
+      <li>Open <code>http://localhost:8000/index.html</code> in your browser.</li>
+    </ol>
+
+    <p>Do not open <code>index.html</code> by double-clicking it. Browsers block the Python files
+    from loading that way.</p>
+
+    <h3>Command-line verification scripts</h3>
+
+    <p>These are the checks used during development. Each prints PASS/FAIL lines and
+    saves CSVs to <code>results/</code>:</p>
+
+    <pre><code>python check_phase1.py
+python check_phase2.py
+python check_phase2b.py
+python check_phase3.py              (TS4GM paper protocol; add --quick to speed up)
+python check_phase4.py              (all four algorithms; add --paper for paper mode)
+python try_grasp.py                 (GRASP; --quick default, --paper for paper mode)
+python try_lns.py                   (LNS; add --quick to speed up)
+python try_ga.py                    (GA; --quick default, --paper for paper mode)</code></pre>
+
+    <p>Every script writes CSVs to the <code>results/</code> folder. The paper-style runs on the
+    88-site instance take minutes; the quick modes take under two minutes.</p>
+
+    <h2>Project structure</h2>
+
+    <table>
+      <thead>
+        <tr><th>File or folder</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>index.html</code></td><td>The web page you interact with</td></tr>
+        <tr><td><code>main.py</code></td><td>Connects the buttons and charts to the planner</td></tr>
+        <tr><td><code>uavplanner/</code></td><td>The planning code (four algorithms and helpers)</td></tr>
+        <tr><td><code>check_phase1.py</code> ... <code>check_phase4.py</code></td><td>Development verification scripts</td></tr>
+        <tr><td><code>try_grasp.py</code>, <code>try_lns.py</code>, <code>try_ga.py</code></td><td>Standalone drivers for the comparison algorithms</td></tr>
+        <tr><td><code>results/</code></td><td>Output folder for CSV files written by the scripts</td></tr>
+        <tr><td><code>LICENSE</code></td><td>The MIT license</td></tr>
+      </tbody>
+    </table>
+
+    <p>Inside <code>uavplanner/</code>:</p>
+
+    <table>
+      <thead>
+        <tr><th>Module</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>model.py</code></td><td>Data model, travel time, objective, feasibility check</td></tr>
+        <tr><td><code>data.py</code></td><td>Synthetic data and CSV reading/writing</td></tr>
+        <tr><td><code>local_search.py</code></td><td>2-opt and Or-opt (intra-trip improvement)</td></tr>
+        <tr><td><code>initial.py</code></td><td>Documented two-nearest greedy insertion initializer</td></tr>
+        <tr><td><code>initial_paper.py</code></td><td>Paper-style 2-Nearest Greedy Insertion initializer</td></tr>
+        <tr><td><code>ordering.py</code></td><td>Sort trips by raw profit (highest first)</td></tr>
+        <tr><td><code>ts4gm.py</code></td><td>TS4GM algorithm</td></tr>
+        <tr><td><code>lns.py</code></td><td>LNS algorithm</td></tr>
+        <tr><td><code>grasp.py</code></td><td>GRASP algorithm</td></tr>
+        <tr><td><code>ga.py</code></td><td>GA algorithm</td></tr>
+        <tr><td><code>algo_common.py</code></td><td>Shared building blocks used by all four algorithms</td></tr>
+        <tr><td><code>svgplots.py</code></td><td>Small SVG chart helpers (map and convergence charts)</td></tr>
+        <tr><td><code>api.py</code></td><td>One-call interface used by the browser and the scripts</td></tr>
+        <tr><td><code>__init__.py</code></td><td>Package exports</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Reference</h2>
+
+    <p>
+      Wang, W., &amp; Wen, C. (2026). Multi-trip path planning for UAV with autonomous
+      docking station in geohazards monitoring. <em>Computers &amp; Industrial Engineering,
+      211</em>, 111578. <a href="https://doi.org/10.1016/j.cie.2025.111578" target="_blank" rel="noopener">https://doi.org/10.1016/j.cie.2025.111578</a>
+    </p>
+
+    <h2>Authors</h2>
+    <p>Mostafa Hajiaghaei-Keshteli, Arya Bavar, Avesta Bavar, Fereshteh Sadafi Vishkaei</p>
+
+    <h2>License</h2>
+    <p>
+      Released under the MIT License. See the <code>LICENSE</code> file. In short, you may use,
+      copy, modify and share this software, provided the copyright notice is kept.
+      The software comes without any warranty.
+    </p>
+
+    <footer>
+      This HTML file was generated from <code>README.md</code>. If the two disagree,
+      <code>README.md</code> is the source of truth.
+    </footer>
+  </div>
+</body>
+</html>

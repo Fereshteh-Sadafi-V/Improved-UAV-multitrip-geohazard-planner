@@ -1,0 +1,5 @@
+algorithm,trips,objective,improvement,runtime_s,feasible,iterations_recorded
+ts4gm,5,176.165100,+3.584500,25.4,True,21
+lns,4,176.238000,+3.657400,26.0,True,18
+grasp,5,175.227200,+2.646600,65.1,True,11
+ga,5,174.746500,+2.165900,29.3,True,16
